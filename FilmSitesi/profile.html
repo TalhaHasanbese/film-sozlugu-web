@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil Ayarları | Film Sözlüğü</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- ORTAK TEMA --- */
+        :root { --cinema-red: #e50914; --bg-main: #141414; --text: #e5e5e5; }
+        body { font-family: 'Source Sans Pro', sans-serif; background: var(--bg-main); color: var(--text); margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+
+        .settings-container {
+            background: #1f1f1f;
+            padding: 40px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+        }
+
+        h2 { color: var(--cinema-red); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px; }
+
+        label { display: block; margin-top: 20px; color: #aaa; font-size: 0.9rem; margin-bottom: 5px; }
+        
+        .inp { 
+            width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: white; border-radius: 4px; font-size: 1rem;
+            box-sizing: border-box; /* Taşmayı engeller */
+        }
+        .inp:focus { border-color: var(--cinema-red); outline: none; }
+
+        .btn-save { 
+            width: 100%; padding: 12px; background: var(--cinema-red); border: none; color: white; font-weight: bold; 
+            margin-top: 25px; cursor: pointer; border-radius: 4px; font-size: 1rem; transition: 0.3s;
+        }
+        .btn-save:hover { background: #f40612; }
+
+        .btn-logout {
+            width: 100%; padding: 12px; background: transparent; border: 1px solid #444; color: #aaa; 
+            margin-top: 15px; cursor: pointer; border-radius: 4px; transition: 0.3s;
+        }
+        .btn-logout:hover { border-color: #777; color: white; }
+
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #777; text-decoration: none; font-size: 0.9rem; }
+        .back-link:hover { color: white; }
+
+        .info-box { background: rgba(229, 9, 20, 0.1); padding: 10px; font-size: 0.85rem; color: #ff8a8a; border-radius: 4px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+    <div class="settings-container">
+        <h2>Profil Ayarları</h2>
+        
+        <div class="info-box">
+            Burada değiştireceğiniz kullanıcı adı, yazdığınız tüm entrylerde güncellenecektir.
+        </div>
+
+        <label>Kullanıcı Adı</label>
+        <input type="text" id="usernameInput" class="inp" placeholder="Adınız...">
+
+        <label>Email (Değiştirilemez)</label>
+        <input type="text" id="emailInput" class="inp" disabled style="opacity: 0.5; cursor: not-allowed;">
+
+        <button class="btn-save" onclick="kaydet()">DEĞİŞİKLİKLERİ KAYDET</button>
+        <button class="btn-logout" onclick="cikisYap()">ÇIKIŞ YAP</button>
+
+        <a href="index.html" class="back-link">← Sözlüğe Geri Dön</a>
+    </div>
+
+    <script>
+        const API = "http://filmkolikapi.somee.com/api"; 
+        let user = null;
+
+        // Sayfa açılınca
+        window.onload = function() {
+            const u = localStorage.getItem("user");
+            if(!u) {
+                // Giriş yapmamışsa Login'e at
+                window.location.href = "login.html";
+            } else {
+                user = JSON.parse(u);
+                // Bilgileri kutulara doldur
+                document.getElementById("usernameInput").value = user.username;
+                document.getElementById("emailInput").value = user.email || "Belirtilmemiş";
+            }
+        };
+
+        async function kaydet() {
+            const yeniAd = document.getElementById("usernameInput").value;
+            if(!yeniAd.trim()) return alert("Kullanıcı adı boş olamaz!");
+
+            try {
+                // Backend'e güncelleme isteği
+                const res = await fetch(API + "/Users/" + user.id, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Id: user.id, Username: yeniAd })
+                });
+
+                if(res.ok) {
+                    const guncelUser = await res.json();
+                    
+                    // LocalStorage güncelle (ki index.html'e dönünce yeni ismi görsün)
+                    // Şifre vb. kaybolmasın diye eski objeyle yeniyi birleştiriyoruz
+                    user.username = guncelUser.username;
+                    localStorage.setItem("user", JSON.stringify(user));
+
+                    alert("Profiliniz başarıyla güncellendi! ✅");
+                    window.location.href = "index.html"; // Ana sayfaya dön
+                } else {
+                    alert("Hata: " + await res.text());
+                }
+            } catch(e) {
+                console.error(e);
+                alert("Sunucuya bağlanılamadı.");
+            }
+        }
+
+        function cikisYap() {
+            if(confirm("Çıkış yapmak istediğinize emin misiniz?")) {
+                localStorage.removeItem("user");
+                window.location.href = "index.html";
+            }
+        }
+    </script>
+
+</body>
+</html>
