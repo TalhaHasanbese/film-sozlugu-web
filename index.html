@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Film Sözlüğü</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- STİLLER --- */
+        :root { --cinema-red: #e50914; --bg-main: #141414; --bg-sec: #1f1f1f; --text: #e5e5e5; --text-sec: #b3b3b3; --border: #333; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Source Sans Pro', sans-serif; margin: 0; background: var(--bg-main); color: var(--text); overflow-x: hidden; }
+
+        /* HEADER */
+        header { background: var(--bg-sec); height: 60px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 15px; position: fixed; top: 0; width: 100%; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .mobile-menu-btn { display: none; font-size: 1.4rem; color: var(--text); background: none; border: none; cursor: pointer; }
+        .logo { font-weight: 700; font-size: 1.4rem; color: var(--cinema-red); text-decoration: none; letter-spacing: 1px; }
+        
+        .search-box { flex: 1; max-width: 500px; margin: 0 20px; position: relative; }
+        .search-box input { width: 100%; padding: 10px 15px; border: 1px solid var(--border); background: #000; color: var(--text); border-radius: 4px; outline: none; }
+        .search-box i { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--cinema-red); }
+
+        .user-menu { display: flex; align-items: center; }
+        .user-menu a { text-decoration: none; color: var(--text-sec); font-weight: 600; font-size: 0.9rem; margin-left: 15px; cursor: pointer; }
+        .user-menu a:hover { color: white; }
+
+        /* LAYOUT */
+        .main-container { display: flex; margin-top: 60px; min-height: calc(100vh - 60px); }
+        .left-frame { width: 300px; background: var(--bg-sec); border-right: 1px solid var(--border); padding: 15px 0; overflow-y: auto; position: fixed; top: 60px; bottom: 0; left: 0; z-index: 90; transition: 0.3s; }
+        .content-area { margin-left: 300px; flex: 1; padding: 20px 40px; width: 100%; }
+
+        .frame-header { padding: 15px 20px; font-weight: 700; color: var(--cinema-red); font-size: 0.9rem; border-bottom: 1px solid var(--border); margin-top: 10px; }
+        .topic-list { list-style: none; padding: 0; margin: 0; }
+        .topic-list li { padding: 12px 20px; cursor: pointer; font-size: 0.95rem; display: flex; justify-content: space-between; border-bottom: 1px solid #2a2a2a; }
+        .topic-list li:hover, .topic-list li.active { background: #2a2a2a; border-left: 4px solid var(--cinema-red); }
+        .count { font-size: 0.8rem; color: var(--cinema-red); font-weight: bold; }
+
+        h1.topic-title { font-size: 1.8rem; margin-bottom: 20px; color: var(--text); }
+        .entry { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .entry-text { font-size: 1.05rem; line-height: 1.6; margin-bottom: 10px; }
+        .entry-meta { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--text-sec); }
+        .entry-actions i { margin-right: 15px; cursor: pointer; transition: 0.2s; }
+        .entry-actions i:hover { color: var(--cinema-red); transform: scale(1.1); }
+
+        .btn-submit { margin-top: 10px; background: var(--cinema-red); color: white; border: none; padding: 10px 20px; border-radius: 4px; float: right; cursor: pointer; }
+        
+        /* MOBİL */
+        @media (max-width: 768px) {
+            .mobile-menu-btn { display: block; } .search-box { display: none; } .user-menu a { font-size: 0.8rem; }
+            .left-frame { transform: translateX(-100%); width: 80%; box-shadow: 5px 0 15px rgba(0,0,0,0.5); }
+            .left-frame.active { transform: translateX(0); }
+            .content-area { margin-left: 0; padding: 15px; }
+            #mobile-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 80; }
+            #mobile-overlay.active { display: block; }
+            #btn-area { position: sticky; bottom: 0; background: var(--bg-sec); }
+        }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
+        .custom-modal { background: #1a1a1a; width: 90%; max-width: 500px; padding: 25px; border-radius: 10px; border: 1px solid #444; position: relative; }
+        .inp { width: 100%; padding: 10px; background: #000; border: 1px solid #444; color: white; margin-bottom: 15px; border-radius: 4px; }
+        .close { position: absolute; top: 15px; right: 15px; cursor: pointer; font-size: 1.5rem; }
+        
+        #btn-area { padding: 15px; border-top: 1px solid #333; }
+        #btn-area button { width: 100%; padding: 10px; background: transparent; border: 1px solid var(--cinema-red); color: var(--cinema-red); font-weight: bold; border-radius: 4px; cursor: pointer; }
+        
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="mobile-overlay" onclick="menuyuKapat()"></div>
+
+    <header>
+        <div class="nav-left">
+            <button class="mobile-menu-btn" onclick="menuyuAcKapa()"><i class="fa-solid fa-bars"></i></button>
+            <a href="#" class="logo" onclick="location.reload()">film sözlüğü</a>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="başlık ara...">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+
+        <div class="user-menu">
+            <span id="guest-nav"><a href="login.html">GİRİŞ</a></span>
+            
+            <span id="user-nav" class="hidden" style="display:flex; align-items:center;">
+                <a href="profile.html" id="user-name-display" style="color:var(--cinema-red); border:1px solid #333; padding:5px 10px; border-radius:20px;">@ben</a>
+            </span>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <aside class="left-frame" id="leftPanel">
+            <div class="frame-header">GÜNDEM</div>
+            <ul class="topic-list" id="popular-list"><li style="color:#666; text-align:center;">yükleniyor...</li></ul>
+            <div class="frame-header">EN YENİLER</div>
+            <ul class="topic-list" id="newest-list"><li style="color:#666; text-align:center;">yükleniyor...</li></ul>
+            <div id="btn-area" class="hidden">
+                <button onclick="baslikModalAc()">+ YENİ BAŞLIK</button>
+            </div>
+        </aside>
+
+        <main class="content-area" id="main-content">
+            <div style="text-align: center; margin-top: 80px; color:var(--text-sec);">
+                <i class="fa-solid fa-clapperboard" style="font-size: 4rem; color:var(--cinema-red); margin-bottom: 20px;"></i>
+                <h2 style="color:var(--text);">Hoş geldin.</h2>
+                <p>Sol menüden bir başlık seç veya arama yap.</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="createTopicModal" class="modal-overlay">
+        <div class="custom-modal">
+            <span class="close" onclick="modalKapat()">&times;</span>
+            <h3 style="margin-top:0; color:var(--cinema-red)">Yeni Başlık</h3>
+            <input type="text" id="m-title" class="inp" placeholder="Film Adı...">
+            <textarea id="m-entry" class="inp" style="height:100px; resize:none;" placeholder="İlk entry..."></textarea>
+            <button class="btn-submit" onclick="baslikYayinla()" style="width:100%">YAYINLA</button>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://filmkolikapi.somee.com/api"; 
+        let currentUser = null;
+        let activeMov = null;
+
+        window.onload = function() {
+            kullaniciKontrol();
+            verileriGetir();
+        };
+
+        // KULLANICI KONTROLÜ (Profilin görünmesini sağlayan kısım)
+        function kullaniciKontrol() {
+            const u = localStorage.getItem("user");
+            if(u) {
+                currentUser = JSON.parse(u);
+                // Giriş yapılmışsa GİRİŞ yazısını gizle, PROFİLİ göster
+                document.getElementById("guest-nav").classList.add("hidden");
+                document.getElementById("user-nav").classList.remove("hidden");
+                document.getElementById("user-name-display").innerText = "@" + currentUser.username;
+                document.getElementById("btn-area").classList.remove("hidden");
+            } else {
+                // Giriş yapılmamışsa
+                document.getElementById("guest-nav").classList.remove("hidden");
+                document.getElementById("user-nav").classList.add("hidden");
+                document.getElementById("btn-area").classList.add("hidden");
+            }
+        }
+
+        // ARAMA
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            const aranan = this.value.toLowerCase();
+            document.querySelectorAll(".topic-list li").forEach(li => {
+                li.style.display = li.textContent.toLowerCase().includes(aranan) ? "" : "none";
+            });
+        });
+
+        // VERİ ÇEKME
+        async function verileriGetir() {
+            try {
+                const res = await fetch(API + "/Movies");
+                const movies = await res.json();
+                const l1 = document.getElementById("popular-list");
+                const l2 = document.getElementById("newest-list");
+                l1.innerHTML = ""; l2.innerHTML = "";
+
+                if(movies.length === 0) l1.innerHTML = "<li>Boş</li>";
+                else {
+                    movies.slice(0, 15).forEach(m => addLi(l1, m, true));
+                    movies.slice(0, 5).forEach(m => addLi(l2, m, false));
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function addLi(ul, m, showCount) {
+            const li = document.createElement("li");
+            const cnt = (m.entries) ? m.entries.length : 0;
+            li.innerHTML = `${m.title} ${showCount ? '<span class="count">'+cnt+'</span>' : ''}`;
+            li.onclick = () => { loadTopic(m.id, li); if(window.innerWidth<=768) menuyuKapat(); };
+            ul.appendChild(li);
+        }
+
+        async function loadTopic(id, liElem) {
+            document.querySelectorAll("li").forEach(l => l.classList.remove("active"));
+            if(liElem) liElem.classList.add("active");
+            activeMov = id;
+            const main = document.getElementById("main-content");
+            main.innerHTML = "<p style='text-align:center; padding:50px'>Yükleniyor...</p>";
+
+            try {
+                const res = await fetch(API + "/Movies/" + id);
+                const mov = await res.json();
+                let html = `<h1 class="topic-title">${mov.title}</h1>`;
+                const entries = mov.entries || [];
+
+                if(entries.length>0) {
+                    entries.forEach(e => {
+                        const user = e.user ? e.user.username : "anonim";
+                        const date = e.createdAt ? new Date(e.createdAt).toLocaleDateString("tr-TR") : "";
+                        let del = (currentUser && (currentUser.role==="Admin" || currentUser.id===e.userId)) ? 
+                            `<i class="fa-solid fa-trash-can" style="color:#d9534f" onclick="delEntry(${e.id})"></i>` : "";
+                        html += `<div class="entry"><div class="entry-text">${e.content}</div>
+                        <div class="entry-meta"><div class="entry-actions">${del}</div><div><span style="color:var(--cinema-red)">@${user}</span> ${date}</div></div></div>`;
+                    });
+                } else html += "<p>Entry yok.</p>";
+
+                if(currentUser) html += `<div style="margin-top:20px"><textarea id="new-e" class="inp" placeholder="Yorum yaz..."></textarea><button class="btn-submit" onclick="addEntry()">GÖNDER</button></div>`;
+                else html += `<p><a href="login.html" style="color:var(--cinema-red)">Giriş yap</a>.</p>`;
+
+                main.innerHTML = html;
+            } catch(e) { console.error(e); }
+        }
+
+        async function addEntry() {
+            const txt = document.getElementById("new-e").value;
+            if(!txt.trim()) return alert("Boş olmaz.");
+            await fetch(API+"/Entries", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({Content:txt, MovieId:activeMov, UserId:currentUser.id})});
+            loadTopic(activeMov); verileriGetir();
+        }
+
+        async function delEntry(id) {
+            if(confirm("Silinsin mi?")) {
+                await fetch(API+"/Entries/"+id, {method:"DELETE"});
+                loadTopic(activeMov); verileriGetir();
+            }
+        }
+
+        async function baslikYayinla() {
+            const t = document.getElementById("m-title").value;
+            const e = document.getElementById("m-entry").value;
+            if(!t || !e) return alert("Doldurunuz.");
+            if(!currentUser) return alert("Giriş yapın.");
+
+            const slug = t.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '');
+            try {
+                const r1 = await fetch(API+"/Movies", {
+                    method:"POST", headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify({Title:t, Description:"User", Director:"-", Slug:slug, CreatedBy:currentUser.id})
+                });
+                if(r1.ok) {
+                    const m = await r1.json();
+                    await fetch(API+"/Entries", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({Content:e, MovieId:m.id, UserId:currentUser.id})});
+                    modalKapat(); verileriGetir(); alert("Başarılı!");
+                    document.getElementById("m-title").value=""; document.getElementById("m-entry").value="";
+                } else alert("Hata: "+await r1.text());
+            } catch(err) { alert("Hata."); }
+        }
+
+        function baslikModalAc() { document.getElementById("createTopicModal").style.display = "flex"; }
+        function modalKapat() { document.getElementById("createTopicModal").style.display = "none"; }
+        function menuyuAcKapa() { document.getElementById("leftPanel").classList.toggle("active"); document.getElementById("mobile-overlay").classList.toggle("active"); }
+        function menuyuKapat() { document.getElementById("leftPanel").classList.remove("active"); document.getElementById("mobile-overlay").classList.remove("active"); }
+    </script>
+</body>
+</html>

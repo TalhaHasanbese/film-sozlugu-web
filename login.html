@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş Yap | Film Sözlüğü</title>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --cinema-red: #e50914; --bg-main: #141414; --text: #e5e5e5; }
+        * { box-sizing: border-box; }
+        
+        body {
+            margin: 0; padding: 0; font-family: 'Source Sans Pro', sans-serif;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url('https://assets.nflxext.com/ffe/siteui/vlv3/f841d4c7-10e1-40af-bcae-07a3f8dc141a/f6d7434e-d6de-4185-a6d4-c77a2d08737b/TR-tr-20220502-popsignuptwoweeks-perspective_alpha_website_medium.jpg');
+            background-size: cover; background-position: center;
+            height: 100vh; display: flex; align-items: center; justify-content: center;
+        }
+
+        .auth-container {
+            background-color: rgba(0,0,0,0.85); padding: 50px; border-radius: 8px;
+            width: 100%; max-width: 450px; color: var(--text);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        h1 { margin-top: 0; color: var(--cinema-red); font-size: 2rem; margin-bottom: 30px; }
+        
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group input {
+            width: 100%; padding: 15px; background: #333; border: 1px solid #333;
+            border-radius: 4px; color: white; font-size: 1rem; transition: 0.3s;
+        }
+        .input-group input:focus { background: #444; border-color: var(--cinema-red); outline: none; }
+        
+        .btn-main {
+            width: 100%; padding: 15px; background: var(--cinema-red); color: white;
+            border: none; border-radius: 4px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: 0.3s; margin-top: 10px;
+        }
+        .btn-main:hover { background: #f40612; }
+
+        .toggle-text { margin-top: 20px; color: #737373; font-size: 0.95rem; }
+        .toggle-text a { color: white; text-decoration: none; cursor: pointer; }
+        .toggle-text a:hover { text-decoration: underline; }
+
+        .hidden { display: none; }
+        .error-msg { color: #e50914; font-size: 0.9rem; margin-bottom: 15px; display: none; }
+
+         /* Kırmızı Çarpı Butonu Stili */
+.auth-container { position: relative !important; } /* Kutuyu referans al */
+
+.close-btn {
+    position: absolute;
+    top: 5px;   /* Kutunun üstüne taşır */
+    right: 5px; /* Kutunun sağına taşır */
+    width: 50px; height: 50px;
+    background-color: #e50914; /* Kırmızı */
+    color: white;
+    border-radius: 50%; /* Yuvarlak */
+    text-decoration: none;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: bold;
+    box-shadow: 0 0 15px rgba(229, 9, 20, 0.8); /* Parlama */
+    transition: 0.3s;
+    line-height: 0; padding-bottom: 5px;
+}
+.close-btn:hover { transform: scale(1.1) rotate(90deg); background: white; color: #e50914; }
+    </style>
+</head>
+<body>
+
+    <div class="auth-container">
+        <a href="index.html" class="close-btn">&times;</a>
+        <div id="login-form">
+            <h1>Oturum Aç</h1>
+            <div id="login-error" class="error-msg">Hata mesajı</div>
+            
+            <div class="input-group">
+                <input type="text" id="loginUsername" placeholder="Kullanıcı Adı veya E-posta">
+            </div>
+            <div class="input-group">
+                <input type="password" id="loginPassword" placeholder="Şifre">
+            </div>
+            
+            <button class="btn-main" onclick="girisYap()">Oturum Aç</button>
+            
+            <div class="toggle-text">
+                Film Sözlüğü'ne yeni misin? <a onclick="toggleForms()">Şimdi kaydol.</a>
+            </div>
+        </div>
+
+        <div id="register-form" class="hidden">
+            <h1>Kayıt Ol</h1>
+            <div id="register-error" class="error-msg">Hata mesajı</div>
+            <div class="input-group">
+                <input type="text" id="regUsername" placeholder="Kullanıcı Adı">
+            </div>
+            <div class="input-group">
+                <input type="email" id="regEmail" placeholder="E-posta Adresi">
+            </div>
+            <div class="input-group">
+                <input type="password" id="regPassword" placeholder="Şifre">
+            </div>
+            <button class="btn-main" onclick="kayitOl()">Kayıt Ol</button>
+            <div class="toggle-text">
+                Zaten üye misin? <a onclick="toggleForms()">Oturum aç.</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DİKKAT: Port numaranın 5207 olduğundan emin ol. Değilse burayı değiştir.
+        const BASE_URL = "http://filmkolikapi.somee.com/api"; 
+
+        function toggleForms() {
+            document.getElementById("login-form").classList.toggle("hidden");
+            document.getElementById("register-form").classList.toggle("hidden");
+            sifirla();
+        }
+
+        function hataGoster(elementId, mesaj) {
+            const el = document.getElementById(elementId);
+            el.innerText = mesaj;
+            el.style.display = "block";
+        }
+
+        function sifirla() {
+            document.querySelectorAll(".error-msg").forEach(e => e.style.display = "none");
+        }
+
+        // --- KAYIT OL FONKSİYONU ---
+        async function kayitOl() {
+            sifirla();
+            const username = document.getElementById("regUsername").value;
+            const email = document.getElementById("regEmail").value;
+            const password = document.getElementById("regPassword").value;
+
+            if(!username || !email || !password) return hataGoster("register-error", "Tüm alanları doldurmalısın.");
+
+            try {
+                const res = await fetch(BASE_URL + "/Users/Register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        Username: username, 
+                        Email: email, 
+                        Password: password,
+                        Role: "User"
+                    })
+                });
+
+                if(res.ok) {
+                    alert("Kayıt başarılı! Şimdi giriş yapabilirsin.");
+                    toggleForms(); 
+                } else {
+                    const msg = await res.text();
+                    hataGoster("register-error", "Kayıt hatası: " + msg);
+                }
+            } catch(e) {
+                hataGoster("register-error", "Sunucuya bağlanılamadı.");
+                console.error(e);
+            }
+            try {
+                const res = await fetch(API + "/Users/register", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ Username: u, Email: e, Password: p })
+                });
+
+                if (res.ok) {
+                    alert("Kayıt başarılı! Giriş yapabilirsiniz.");
+                    toggleForm(); // Giriş ekranına dön
+                } else {
+                    // SUNUCUDAN GELEN HATA MESAJINI OKU (Örn: "Bu kullanıcı adı zaten alınmış!")
+                    const hataMesaji = await res.text();
+                    alert(hataMesaji); 
+                }
+            } catch (err) {
+                alert("Bağlantı hatası!");
+            }
+        }
+
+        // --- GİRİŞ YAP FONKSİYONU (DÜZELTİLDİ) ---
+        async function girisYap() {
+            sifirla();
+
+            // 1. HTML'deki DOĞRU id'leri kullanarak verileri alıyoruz
+            var girilenKullanici = document.getElementById("loginUsername").value; 
+            var girilenSifre = document.getElementById("loginPassword").value;
+
+            if (!girilenKullanici || !girilenSifre) {
+                hataGoster("login-error", "Lütfen bilgileri giriniz.");
+                return;
+            }
+
+            // 2. C# LoginModel ile aynı isimleri kullanıyoruz
+            const veri = {
+                KullaniciBilgisi: girilenKullanici, 
+                Sifre: girilenSifre
+            };
+
+            try {
+                const response = await fetch(BASE_URL + "/Users/Login", { 
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(veri) 
+                });
+
+                if (response.ok) {
+                    const sonuc = await response.json();
+                    alert("Giriş Başarılı!");
+                    
+                    // Kullanıcıyı tarayıcı hafızasına kaydet
+                    localStorage.setItem("user", JSON.stringify(sonuc));
+                    
+                    // Ana sayfaya yönlendir (Dosya yoluna dikkat et)
+                    window.location.href = "index.html"; 
+                } else {
+                    // Hata mesajını düzgün okuyalım
+                    const errorText = await response.text(); 
+                    hataGoster("login-error", "Hata: " + errorText);
+                }
+            } catch (err) {
+                hataGoster("login-error", "Sunucuya bağlanılamadı. API çalışıyor mu?");
+                console.error(err);
+            }
+        }
+    </script>
+</body>
+</html>
